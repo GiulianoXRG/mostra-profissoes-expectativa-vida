@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Qual é a sua expectativa de vida?</title>
+<style>
+  :root{
+    --paper: #EDEAE0;
+    --paper-deep: #E4E0D2;
+    --line: #CFC9B6;
+    --ink: #1C2B3A;
+    --ink-soft: #56636F;
+    --red: #A8392C;
+    --gold: #A97A34;
+    --teal: #2C6B5E;
+    --white: #FBFAF6;
+    --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Consolas, 'Liberation Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:
+      repeating-linear-gradient(0deg, var(--line) 0px, var(--line) 1px, transparent 1px, transparent 32px),
+      repeating-linear-gradient(90deg, var(--line) 0px, var(--line) 1px, transparent 1px, transparent 32px),
+      var(--paper);
+    background-blend-mode: multiply;
+    opacity:1;
+    color: var(--ink);
+    font-family: var(--font-body);
+  }
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:100vh;
+    padding: 24px 16px;
+  }
+
+  .app{
+    width:100%;
+    max-width: 640px;
+    position: relative;
+  }
+
+  .panel{
+    background: var(--white);
+    border: 1.5px solid var(--ink);
+    box-shadow: 6px 6px 0 rgba(28,43,58,0.10);
+    padding: 44px 40px;
+    position: relative;
+  }
+
+  .screen{ display:none; }
+  .screen.active{
+    display:block;
+    animation: rise 0.35s ease;
+  }
+  @keyframes rise{
+    from{ opacity:0; transform: translateY(10px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .screen.active{ animation:none; }
+  }
+
+  .mark{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+
+  h1{
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.05;
+    font-size: clamp(30px, 6vw, 46px);
+    margin: 0 0 18px 0;
+  }
+  h2{
+    font-family: var(--font-display);
+    font-weight: 700;
+    line-height: 1.15;
+    font-size: clamp(24px, 4.6vw, 32px);
+    margin: 0 0 14px 0;
+  }
+  .rule{
+    width: 64px;
+    height: 3px;
+    background: var(--red);
+    border: none;
+    margin: 0 0 22px 0;
+  }
+  p{
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    margin: 0 0 20px 0;
+  }
+  p:last-of-type{ margin-bottom:0; }
+
+  .btn{
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 600;
+    padding: 14px 26px;
+    background: var(--ink);
+    color: var(--white);
+    border: 1.5px solid var(--ink);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .btn:hover{ background: var(--red); border-color: var(--red); }
+  .btn:focus-visible{ outline: 3px solid var(--gold); outline-offset: 2px; }
+
+  .btn-ghost{
+    background: transparent;
+    color: var(--ink);
+  }
+  .btn-ghost:hover{ background: var(--ink); color: var(--white); border-color: var(--ink); }
+
+  .btn-row{ margin-top: 30px; display:flex; gap:12px; flex-wrap:wrap; }
+
+  /* --- Quiz --- */
+  .ruler{
+    display:flex;
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+  .tick{
+    height: 6px;
+    flex:1;
+    background: var(--paper-deep);
+    border: 1px solid var(--ink);
+  }
+  .tick.filled{ background: var(--ink); }
+  .step-label{
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-bottom: 30px;
+  }
+
+  .choices{
+    display:flex;
+    flex-direction:column;
+    gap: 0;
+    margin-top: 10px;
+    border-top: 1px solid var(--line);
+  }
+  .choice{
+    text-align:left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    padding: 16px 4px;
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--ink);
+    cursor: pointer;
+    display:flex;
+    justify-content: space-between;
+    align-items:center;
+  }
+  .choice:hover{ background: var(--paper); }
+  .choice:focus-visible{ outline: 3px solid var(--gold); outline-offset: -3px; }
+  .choice .num{
+    font-family: var(--font-mono);
+    color: var(--ink-soft);
+    font-size: 13px;
+    margin-right: 14px;
+  }
+  .choice.selected{ background: var(--ink); color: var(--white); }
+  .choice.selected .num{ color: var(--paper); }
+
+  input[type="number"]{
+    font-family: var(--font-mono);
+    font-size: 32px;
+    width: 140px;
+    padding: 10px 12px;
+    border: none;
+    border-bottom: 2px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+  input[type="number"]:focus{ outline:none; border-color: var(--red); }
+
+  /* --- Result --- */
+  .big-number{
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(56px, 14vw, 96px);
+    line-height: 1;
+    color: var(--red);
+    margin: 6px 0 4px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .unit{
+    font-family: var(--font-body);
+    font-size: 16px;
+    color: var(--ink-soft);
+    margin-bottom: 22px;
+  }
+  .note-box{
+    border: 1px solid var(--line);
+    background: var(--paper);
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    line-height: 1.5;
+    margin-top: 22px;
+  }
+
+  /* --- Connection --- */
+  .chain{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 10px;
+    margin: 30px 0 6px 0;
+    flex-wrap: wrap;
+  }
+  .chain-item{
+    flex: 1 1 0;
+    text-align:center;
+    min-width: 90px;
+  }
+  .chain-item .icon{ font-size: 30px; display:block; margin-bottom:8px; }
+  .chain-item .label{ font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); }
+  .chain-arrow{
+    font-family: var(--font-mono);
+    font-size: 20px;
+    color: var(--ink-soft);
+  }
+
+  /* --- Insurer --- */
+  .price-tag{
+    font-family: var(--font-mono);
+    font-weight:600;
+    font-size: 16px;
+  }
+  .reveal{
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--line);
+    display:none;
+  }
+  .reveal.show{ display:block; animation: rise 0.35s ease; }
+
+  .final-line{
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    margin: 18px 0 24px 0;
+  }
+
+  .course-info{
+    margin-top:18px;
+    padding: 16px 18px;
+    border: 1px solid var(--line);
+    background: var(--paper);
+    font-size: 14px;
+    color: var(--ink-soft);
+    line-height:1.6;
+    display:none;
+  }
+  .course-info.show{ display:block; animation: rise 0.35s ease; }
+
+  .restart-link{
+    display:inline-block;
+    margin-top: 22px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    cursor: pointer;
+    background:none; border:none; font-family: var(--font-body); padding:0;
+  }
+
+  @media (max-width: 480px){
+    .panel{ padding: 32px 22px; }
+    .chain{ flex-direction: column; }
+    .chain-arrow{ transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="panel">
+
+    <!-- 1. HERO -->
+    <section class="screen active" id="screen-hero">
+      <div class="mark">FEIRA DE PROFISSÕES — CIÊNCIAS ATUARIAIS</div>
+      <h1>QUAL É A SUA<br>EXPECTATIVA DE VIDA?</h1>
+      <hr class="rule">
+      <p>Responda algumas perguntas rápidas e descubra uma estimativa estatística da sua expectativa de vida.</p>
+      <div class="btn-row">
+        <button class="btn" onclick="goTo('screen-quiz'); renderQuestion();">COMEÇAR</button>
+      </div>
+    </section>
+
+    <!-- 2. QUIZ -->
+    <section class="screen" id="screen-quiz">
+      <div class="ruler" id="ruler"></div>
+      <div class="step-label" id="step-label">Pergunta 1 de 6</div>
+      <div id="question-holder"></div>
+    </section>
+
+    <!-- 3. RESULTADO -->
+    <section class="screen" id="screen-result">
+      <div class="mark">RESULTADO</div>
+      <h2>Sua expectativa de vida estimada</h2>
+      <div class="big-number" id="result-number">--</div>
+      <div class="unit">anos</div>
+      <p id="result-remaining">Isso significa aproximadamente -- anos restantes.</p>
+      <div class="note-box">
+        Esse resultado é uma <strong>estimativa estatística educativa</strong>, baseada em um modelo simplificado a partir das respostas fornecidas. Não é uma previsão médica individual nem um diagnóstico.
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="goTo('screen-connection')">CONTINUAR</button>
+      </div>
+    </section>
+
+    <!-- 4. CONEXÃO -->
+    <section class="screen" id="screen-connection">
+      <div class="mark">POR TRÁS DO NÚMERO</div>
+      <h2>Mas quem calcula esse tipo de coisa?</h2>
+      <p>É aí que entra o atuário. Atuários utilizam matemática, estatística e probabilidade para analisar riscos e estimar acontecimentos futuros — de expectativa de vida a preços de seguros e planos de aposentadoria.</p>
+      <div class="chain">
+        <div class="chain-item"><span class="icon">📊</span><span class="label">DADOS</span></div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-item"><span class="icon">🎲</span><span class="label">PROBABILIDADE</span></div>
+        <div class="chain-arrow">→</div>
+        <div class="chain-item"><span class="icon">🔮</span><span class="label">FUTURO</span></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn" onclick="goTo('screen-insurer')">PRÓXIMO DESAFIO</button>
+      </div>
+    </section>
+
+    <!-- 5. SEGURADORA -->
+    <section class="screen" id="screen-insurer">
+      <div class="mark">DESAFIO</div>
+      <h2>Agora você virou uma seguradora.</h2>
+      <p>Uma pessoa de 25 anos quer contratar um seguro de vida de R$ 100.000. Se ela morrer, sua família receberá esse valor.</p>
+      <p><strong>Quanto você cobraria por esse seguro, por mês?</strong></p>
+      <div class="choices" id="insurer-choices">
+        <button class="choice" data-price="10" onclick="chooseInsurer(this, 10)"><span><span class="num">A</span>R$ 10 por mês</span><span class="price-tag">R$10</span></button>
+        <button class="choice" data-price="50" onclick="chooseInsurer(this, 50)"><span><span class="num">B</span>R$ 50 por mês</span><span class="price-tag">R$50</span></button>
+        <button class="choice" data-price="200" onclick="chooseInsurer(this, 200)"><span><span class="num">C</span>R$ 200 por mês</span><span class="price-tag">R$200</span></button>
+        <button class="choice" data-price="1000" onclick="chooseInsurer(this, 1000)"><span><span class="num">D</span>R$ 1.000 por mês</span><span class="price-tag">R$1.000</span></button>
+      </div>
+
+      <div class="reveal" id="insurer-reveal">
+        <p>Não existe uma resposta certa baseada em apenas um indivíduo. A seguradora precisa analisar <strong>milhares de pessoas</strong> — suas probabilidades de morte, idade, perfil de risco, duração do contrato e outros fatores — para calcular um preço adequado.</p>
+        <div class="final-line">Isso é Ciências Atuariais.</div>
+        <div class="btn-row">
+          <button class="btn" onclick="toggleCourseInfo()">CONHEÇA O CURSO</button>
+          <button class="btn btn-ghost" onclick="restart()">REFAZER O TESTE</button>
+        </div>
+        <div class="course-info" id="course-info">
+          Ciências Atuariais forma profissionais que usam matemática financeira, estatística e probabilidade para avaliar riscos em seguros, previdência, saúde e investimentos. É uma área com alta empregabilidade, forte ligação com o mercado financeiro e demanda crescente por profissionais certificados — por exemplo pela SUSEP e pelo IBA (Instituto Brasileiro de Atuária).
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+  // ---------- Navegação entre telas ----------
+  function goTo(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  // ---------- Questionário ----------
+  const answers = {};
+
+  const questions = [
+    {
+      key: 'idade',
+      title: 'Qual é a sua idade?',
+      type: 'number',
+      placeholder: 'anos'
+    },
+    {
+      key: 'sexo',
+      title: 'Qual é o seu sexo?',
+      type: 'choice',
+      options: [
+        {label:'Feminino', value:'F'},
+        {label:'Masculino', value:'M'},
+        {label:'Prefiro não dizer', value:'NA'}
+      ]
+    },
+    {
+      key: 'fuma',
+      title: 'Você fuma?',
+      type: 'choice',
+      options: [
+        {label:'Sim', value:'sim'},
+        {label:'Não', value:'nao'}
+      ]
+    },
+    {
+      key: 'exercicio',
+      title: 'Você pratica atividade física regularmente?',
+      type: 'choice',
+      options: [
+        {label:'Sim', value:'sim'},
+        {label:'Não', value:'nao'}
+      ]
+    },
+    {
+      key: 'alimentacao',
+      title: 'Como você classificaria sua alimentação?',
+      type: 'choice',
+      options: [
+        {label:'Ruim', value:'ruim'},
+        {label:'Regular', value:'regular'},
+        {label:'Boa', value:'boa'}
+      ]
+    },
+    {
+      key: 'sono',
+      title: 'Quantas horas você dorme por noite, em média?',
+      type: 'choice',
+      options: [
+        {label:'Menos de 6 horas', value:'pouco'},
+        {label:'Entre 6 e 8 horas', value:'ideal'},
+        {label:'Mais de 8 horas', value:'muito'}
+      ]
+    }
+  ];
+
+  let currentQ = 0;
+
+  function renderRuler(){
+    const ruler = document.getElementById('ruler');
+    ruler.innerHTML = '';
+    questions.forEach((_, i) => {
+      const t = document.createElement('div');
+      t.className = 'tick' + (i <= currentQ ? ' filled' : '');
+      ruler.appendChild(t);
+    });
+  }
+
+  function renderQuestion(){
+    currentQ = 0;
+    showQuestion();
+  }
+
+  function showQuestion(){
+    renderRuler();
+    document.getElementById('step-label').textContent = 'Pergunta ' + (currentQ + 1) + ' de ' + questions.length;
+    const q = questions[currentQ];
+    const holder = document.getElementById('question-holder');
+    holder.innerHTML = '';
+
+    const h = document.createElement('h2');
+    h.textContent = q.title;
+    holder.appendChild(h);
+
+    if(q.type === 'number'){
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.min = 14;
+      input.max = 100;
+      input.placeholder = q.placeholder;
+      input.id = 'input-' + q.key;
+      if(answers[q.key] !== undefined) input.value = answers[q.key];
+      holder.appendChild(input);
+
+      const row = document.createElement('div');
+      row.className = 'btn-row';
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = 'Continuar';
+      btn.onclick = () => {
+        const val = parseInt(input.value, 10);
+        if(!val || val < 10 || val > 100){
+          input.style.borderColor = 'var(--red)';
+          input.focus();
+          return;
+        }
+        answers[q.key] = val;
+        nextQuestion();
+      };
+      row.appendChild(btn);
+      holder.appendChild(row);
+      setTimeout(() => input.focus(), 50);
+    } else {
+      const wrap = document.createElement('div');
+      wrap.className = 'choices';
+      q.options.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.className = 'choice';
+        if(answers[q.key] === opt.value) b.classList.add('selected');
+        b.innerHTML = '<span><span class="num">' + String.fromCharCode(65+i) + '</span>' + opt.label + '</span>';
+        b.onclick = () => {
+          answers[q.key] = opt.value;
+          setTimeout(nextQuestion, 150);
+        };
+        wrap.appendChild(b);
+      });
+      holder.appendChild(wrap);
+    }
+  }
+
+  function nextQuestion(){
+    if(currentQ < questions.length - 1){
+      currentQ++;
+      showQuestion();
+    } else {
+      computeResult();
+      goTo('screen-result');
+    }
+  }
+
+  // ---------- Cálculo educativo simplificado ----------
+  function computeResult(){
+    let base = 76.0;
+
+    if(answers.sexo === 'F') base += 4.2;
+    else if(answers.sexo === 'M') base += 0;
+    else base += 2;
+
+    if(answers.fuma === 'sim') base -= 8;
+
+    if(answers.exercicio === 'sim') base += 3;
+    else base -= 2;
+
+    if(answers.alimentacao === 'boa') base += 2;
+    else if(answers.alimentacao === 'ruim') base -= 3;
+
+    if(answers.sono === 'ideal') base += 2;
+    else if(answers.sono === 'pouco') base -= 2;
+    else if(answers.sono === 'muito') base -= 1;
+
+    base = Math.max(45, Math.min(97, base));
+
+    const idade = answers.idade || 17;
+    const restantes = Math.max(1, Math.round((base - idade) * 10) / 10);
+
+    document.getElementById('result-number').textContent = base.toFixed(1).replace('.', ',');
+    document.getElementById('result-remaining').textContent =
+      'Isso significa aproximadamente ' + Math.round(restantes) + ' anos restantes, a partir dos seus ' + idade + ' anos.';
+  }
+
+  // ---------- Desafio da seguradora ----------
+  function chooseInsurer(el, price){
+    document.querySelectorAll('#insurer-choices .choice').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    document.getElementById('insurer-reveal').classList.add('show');
+  }
+
+  function toggleCourseInfo(){
+    document.getElementById('course-info').classList.toggle('show');
+  }
+
+  // ---------- Reiniciar ----------
+  function restart(){
+    for(const k in answers) delete answers[k];
+    document.getElementById('course-info').classList.remove('show');
+    document.getElementById('insurer-reveal').classList.remove('show');
+    document.querySelectorAll('#insurer-choices .choice').forEach(c => c.classList.remove('selected'));
+    goTo('screen-hero');
+  }
+</script>
+
+</body>
+</html>
