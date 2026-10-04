@@ -281,6 +281,116 @@
     background:none; border:none; font-family: var(--font-body); padding:0;
   }
 
+  /* --- Roleta da Sorte / LGN --- */
+  .coin-stage{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin: 26px 0 10px 0;
+  }
+  .coin{
+    font-size: 54px;
+    line-height:1;
+    user-select:none;
+    display:inline-block;
+  }
+  .coin.spin{ animation: coinspin 0.45s ease; }
+  @keyframes coinspin{
+    0%{ transform: rotateY(0deg) scale(1); }
+    45%{ transform: rotateY(300deg) scale(1.08); }
+    100%{ transform: rotateY(360deg) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .coin.spin{ animation:none; }
+  }
+  .spin-result{
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--ink-soft);
+    text-align:center;
+    min-height: 18px;
+    margin-bottom: 6px;
+  }
+  .stat-row{
+    display:flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin: 18px 0;
+  }
+  .stat-box{
+    flex: 1 1 0;
+    min-width: 110px;
+    border: 1.5px solid var(--line);
+    background: var(--paper);
+    padding: 14px 10px;
+    text-align:center;
+  }
+  .stat-box .stat-value{
+    font-family: var(--font-mono);
+    font-weight:700;
+    font-size: 22px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-box .stat-label{
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    margin-top: 6px;
+  }
+  .strip{
+    display:flex;
+    flex-wrap:wrap;
+    gap: 5px;
+    min-height: 12px;
+    margin: 4px 0 22px 0;
+  }
+  .dot{
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display:inline-block;
+    flex-shrink:0;
+  }
+  .dot.cara{ background: var(--gold); }
+  .dot.coroa{ background: var(--red); }
+  .chart-wrap{
+    border: 1.5px solid var(--ink);
+    background: var(--white);
+    padding: 10px 10px 6px 10px;
+    margin: 4px 0 6px 0;
+  }
+  #lln-canvas{
+    width: 100%;
+    height: 170px;
+    display:block;
+  }
+  .chart-caption{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--ink-soft);
+    text-align:center;
+    margin-bottom: 22px;
+  }
+  .quote-box{
+    border-left: 3px solid var(--red);
+    background: var(--paper-deep);
+    padding: 16px 20px;
+    margin: 26px 0;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 17px;
+    line-height:1.5;
+    color: var(--ink);
+  }
+  .btn:disabled{
+    opacity: 0.45;
+    cursor: default;
+    background: var(--ink);
+    border-color: var(--ink);
+  }
+
   @media (max-width: 480px){
     .panel{ padding: 32px 22px; }
     .chain{ flex-direction: column; }
@@ -339,11 +449,48 @@
         <div class="chain-item"><span class="icon">🔮</span><span class="label">FUTURO</span></div>
       </div>
       <div class="btn-row">
+        <button class="btn" onclick="goTo('screen-loteria')">PRÓXIMO DESAFIO</button>
+      </div>
+    </section>
+
+    <!-- 5. ROLETA DA SORTE / LEI DOS GRANDES NÚMEROS -->
+    <section class="screen" id="screen-loteria">
+      <div class="mark">DESAFIO — LEI DOS GRANDES NÚMEROS</div>
+      <h2>Você toparia esse jogo?</h2>
+      <p>Uma moeda honesta é lançada. Se der <strong>CARA</strong>, você ganha R$ 100. Se der <strong>COROA</strong>, você perde R$ 100. Jogue uma vez — ou dez mil.</p>
+
+      <div class="btn-row">
+        <button class="btn" id="btn-spin-1" onclick="spinOnce()">🪙 GIRAR 1 VEZ</button>
+        <button class="btn btn-ghost" id="btn-spin-10k" onclick="spinManyTimes()">🎡 GIRAR 10.000 VEZES</button>
+      </div>
+
+      <div class="coin-stage"><div class="coin" id="coin-face">🪙</div></div>
+      <div class="spin-result" id="spin-result">Ainda não jogou. Clique em "Girar 1 vez" para começar.</div>
+
+      <div class="stat-row" id="personal-stats" style="display:none;">
+        <div class="stat-box"><div class="stat-value" id="personal-flips">0</div><div class="stat-label">SUAS RODADAS</div></div>
+        <div class="stat-box"><div class="stat-value" id="personal-balance">R$0</div><div class="stat-label">SEU SALDO</div></div>
+      </div>
+      <div class="strip" id="personal-strip"></div>
+
+      <div id="mass-results" style="display:none;">
+        <div class="stat-row">
+          <div class="stat-box"><div class="stat-value" id="mass-count">0</div><div class="stat-label">RODADAS SIMULADAS</div></div>
+          <div class="stat-box"><div class="stat-value" id="mass-pct-cara">0%</div><div class="stat-label">SAÍRAM CARA</div></div>
+          <div class="stat-box"><div class="stat-value" id="mass-avg">R$0</div><div class="stat-label">SALDO MÉDIO / RODADA</div></div>
+        </div>
+        <div class="chart-wrap"><canvas id="lln-canvas" width="600" height="170"></canvas></div>
+        <div class="chart-caption">Saldo médio por rodada, conforme o número de rodadas cresce (escala logarítmica)</div>
+      </div>
+
+      <div class="quote-box">"Para uma pessoa, o futuro é sorte; para um milhão de pessoas, é matemática exata."</div>
+
+      <div class="btn-row">
         <button class="btn" onclick="goTo('screen-insurer')">PRÓXIMO DESAFIO</button>
       </div>
     </section>
 
-    <!-- 5. SEGURADORA -->
+    <!-- 6. SEGURADORA -->
     <section class="screen" id="screen-insurer">
       <div class="mark">DESAFIO</div>
       <h2>Agora você virou uma seguradora.</h2>
@@ -554,6 +701,136 @@
       'Isso significa aproximadamente ' + Math.round(restantes) + ' anos restantes, a partir dos seus ' + idade + ' anos.';
   }
 
+  // ---------- Roleta da Sorte / Lei dos Grandes Números ----------
+  let personalFlips = 0;
+  let personalBalance = 0;
+
+  function fmtMoney(v){
+    const sign = v > 0 ? '+' : (v < 0 ? '\u2212' : '');
+    return sign + 'R$' + Math.abs(Math.round(v));
+  }
+
+  function spinOnce(){
+    personalFlips++;
+    const heads = Math.random() < 0.5;
+    personalBalance += heads ? 100 : -100;
+
+    const coin = document.getElementById('coin-face');
+    coin.classList.remove('spin');
+    void coin.offsetWidth;
+    coin.classList.add('spin');
+
+    const resultEl = document.getElementById('spin-result');
+    resultEl.textContent = (heads ? 'CARA — você ganhou R$100' : 'COROA — você perdeu R$100') +
+      ' (rodada ' + personalFlips + ')';
+    resultEl.style.color = heads ? 'var(--teal)' : 'var(--red)';
+
+    document.getElementById('personal-stats').style.display = 'flex';
+    document.getElementById('personal-flips').textContent = personalFlips;
+    const balEl = document.getElementById('personal-balance');
+    balEl.textContent = fmtMoney(personalBalance);
+    balEl.style.color = personalBalance > 0 ? 'var(--teal)' : (personalBalance < 0 ? 'var(--red)' : 'var(--ink)');
+
+    const strip = document.getElementById('personal-strip');
+    const dot = document.createElement('span');
+    dot.className = 'dot ' + (heads ? 'cara' : 'coroa');
+    strip.appendChild(dot);
+  }
+
+  function drawLLNChart(ctx, avg, uptoIdx, w, h){
+    ctx.clearRect(0, 0, w, h);
+    const pad = { left: 46, right: 10, top: 10, bottom: 20 };
+    const plotW = w - pad.left - pad.right;
+    const plotH = h - pad.top - pad.bottom;
+    const yMax = 100, yMin = -100;
+    const logMax = Math.log10(avg.length);
+
+    function xFor(i){ return pad.left + (Math.log10(i + 1) / logMax) * plotW; }
+    function yFor(v){
+      const c = Math.max(yMin, Math.min(yMax, v));
+      return pad.top + (1 - (c - yMin) / (yMax - yMin)) * plotH;
+    }
+
+    ctx.strokeStyle = '#A97A34';
+    ctx.setLineDash([4, 3]);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, yFor(0));
+    ctx.lineTo(w - pad.right, yFor(0));
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#56636F';
+    ctx.font = '10px monospace';
+    ctx.fillText('R$100', 2, yFor(100) + 3);
+    ctx.fillText('R$0', 2, yFor(0) + 3);
+    ctx.fillText('-R$100', 2, yFor(-100) + 3);
+    ctx.fillText('1', pad.left - 3, h - 4);
+    ctx.fillText('10.000', w - pad.right - 34, h - 4);
+
+    ctx.strokeStyle = '#2C6B5E';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const step = uptoIdx > 1200 ? Math.ceil(uptoIdx / 1200) : 1;
+    for(let i = 0; i <= uptoIdx; i += step){
+      const x = xFor(i), y = yFor(avg[i]);
+      if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    if(uptoIdx % step !== 0){
+      ctx.lineTo(xFor(uptoIdx), yFor(avg[uptoIdx]));
+    }
+    ctx.stroke();
+  }
+
+  function spinManyTimes(){
+    const btn = document.getElementById('btn-spin-10k');
+    btn.disabled = true;
+
+    const n = 10000;
+    const avg = new Float32Array(n);
+    const caraCum = new Int32Array(n);
+    const saldoCum = new Int32Array(n);
+    let cara = 0, saldo = 0;
+    for(let i = 0; i < n; i++){
+      if(Math.random() < 0.5){ cara++; saldo += 100; } else { saldo -= 100; }
+      caraCum[i] = cara;
+      saldoCum[i] = saldo;
+      avg[i] = saldo / (i + 1);
+    }
+
+    document.getElementById('mass-results').style.display = 'block';
+    const canvas = document.getElementById('lln-canvas');
+    const cssWidth = canvas.clientWidth || 560;
+    const cssHeight = 170;
+    canvas.width = cssWidth * 2;
+    canvas.height = cssHeight * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+
+    const duration = 1000;
+    const start = performance.now();
+
+    function frame(now){
+      const t = Math.min(1, (now - start) / duration);
+      const idx = Math.max(0, Math.floor(t * (n - 1)));
+      const flips = idx + 1;
+      const pctCara = Math.round((caraCum[idx] / flips) * 100);
+
+      document.getElementById('mass-count').textContent = flips.toLocaleString('pt-BR');
+      document.getElementById('mass-pct-cara').textContent = pctCara + '%';
+      document.getElementById('mass-avg').textContent = fmtMoney(saldoCum[idx] / flips);
+
+      drawLLNChart(ctx, avg, idx, cssWidth, cssHeight);
+
+      if(t < 1){
+        requestAnimationFrame(frame);
+      } else {
+        btn.disabled = false;
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
   // ---------- Desafio da seguradora ----------
   function chooseInsurer(el, price){
     document.querySelectorAll('#insurer-choices .choice').forEach(c => c.classList.remove('selected'));
@@ -571,6 +848,16 @@
     document.getElementById('course-info').classList.remove('show');
     document.getElementById('insurer-reveal').classList.remove('show');
     document.querySelectorAll('#insurer-choices .choice').forEach(c => c.classList.remove('selected'));
+
+    personalFlips = 0;
+    personalBalance = 0;
+    document.getElementById('personal-stats').style.display = 'none';
+    document.getElementById('personal-strip').innerHTML = '';
+    document.getElementById('spin-result').textContent = 'Ainda não jogou. Clique em "Girar 1 vez" para começar.';
+    document.getElementById('spin-result').style.color = 'var(--ink-soft)';
+    document.getElementById('mass-results').style.display = 'none';
+    document.getElementById('btn-spin-10k').disabled = false;
+
     goTo('screen-hero');
   }
 </script>
